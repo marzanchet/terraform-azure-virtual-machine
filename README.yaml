@@ -1,0 +1,48 @@
+---
+#
+# This is the canonical configuration for the `README.md`
+# Run `make readme` to rebuild the `README.md`
+#
+
+
+# Name of this project
+name : Terraform Azure Virtual Machine
+
+# License of this project
+license: "MIT"
+
+# Canonical GitHub repo
+github_repo: clouddrove/terraform-azure-virtual-machine
+
+# Badges to display
+badges:
+  - name: "Terraform"
+    image: "https://img.shields.io/badge/Terraform-v0.12-green"
+    url: "https://www.terraform.io"
+  - name: "Licence"
+    image: "https://img.shields.io/badge/License-MIT-blue.svg"
+    url: "LICENSE.md"
+
+#  description of this project
+description: |-
+  Terraform module to create virtual machine on Azure.
+
+# extra content
+include:
+  - "terraform.md"
+
+# How to use this project
+usage : |-
+  ### Simple Example
+  Here is an example of how you can use this module in your inventory structure:
+    ```hcl
+    module "subnet" {
+      source      = "git::https://github.com/clouddrove/terraform-azure-subnet.git?ref=tags/0.12.0"
+      name        = "subnet"
+      application = "clouddrove"
+      environment = "test"
+      label_order = ["environment", "application", "name"]
+      enabled     = true
+      location    = "North Europe"
+    }
+    ```
