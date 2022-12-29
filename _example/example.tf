@@ -133,6 +133,6 @@ module "virtual-machine" {
   storage_image_reference_enabled = true
   image_publisher                 = "Canonical"
   image_offer                     = "UbuntuServer"
-  image_sku                       = "20.04-LTS"
+  image_sku                       = "16.04-LTS"
   image_version                   = "latest"
 }
