@@ -86,7 +86,7 @@ module "virtual-machine" {
   source = "../"
 
   ## Tags
-  name        = "virtual-machine"
+  name        = "app"
   environment = "test"
   label_order = ["environment", "name"]
 
@@ -132,7 +132,7 @@ module "virtual-machine" {
   managed_disk_type               = "Standard_LRS"
   storage_image_reference_enabled = true
   image_publisher                 = "Canonical"
-  image_offer                     = "UbuntuServer"
-  image_sku                       = "16.04-LTS"
+  image_offer                     = "0001-com-ubuntu-server-focal"
+  image_sku                       = "20_04-lts"
   image_version                   = "latest"
 }
