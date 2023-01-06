@@ -3,109 +3,108 @@ provider "azurerm" {
 }
 
 module "resource_group" {
-  source = "git::https://github.com/clouddrove/terraform-azure-resource-group.git?ref=tags/0.12.0"
+  source  = "clouddrove/resource-group/azure"
+  version = "1.0.0"
 
-  name        = "resource-group"
-  application = "clouddrove"
+  name        = "app-vm"
   environment = "test"
-  label_order = ["environment", "application", "name"]
-
-  enabled  = true
-  location = "North Europe"
+  label_order = ["name", "environment"]
+  location    = "Canada Central"
 }
 
+#Vnet
 module "virtual_network" {
-  source = "git::https://github.com/clouddrove/terraform-azure-virtual-network.git?ref=slave"
+  depends_on = [module.resource_group]
+  source     = "clouddrove/virtual-network/azure"
+  version    = "1.0.4"
 
-  ## Tags
-  name        = "virtual-network"
-  application = "clouddrove"
+  name        = "app"
   environment = "test"
-  label_order = ["environment", "application", "name"]
-  enabled     = true
+  label_order = ["name", "environment"]
 
-  ## Virtual Network
   resource_group_name = module.resource_group.resource_group_name
   location            = module.resource_group.resource_group_location
-  address_space       = ["10.0.0.0/16"]
-  dns_servers         = ["10.0.0.0", "10.0.0.1"]
-}
+  address_space       = "10.0.0.0/16"
+  enable_ddos_pp      = false
 
-module "subnet" {
-  source = "../../terraform-azure-subnet"
+  #subnet
+  default_name_subnet           = true
+  subnet_names                  = ["subnet1"]
+  subnet_prefixes               = ["10.0.1.0/24"]
+  disable_bgp_route_propagation = false
 
-  ## Tags
-  name        = "subnet"
-  application = "clouddrove"
-  environment = "test"
-  label_order = ["environment", "application", "name"]
-  enabled     = true
-
-  ## Subnet
-  endpoint_enabled                               = true
-  address_prefixes                               = ["10.0.0.0/24", "10.0.1.0/24"]
-  resource_group_name                            = module.resource_group.resource_group_name
-  virtual_network_name                           = module.virtual_network.virtual_network_name
-  enforce_private_link_endpoint_network_policies = true
-  service_endpoints                              = ["Microsoft.AzureActiveDirectory", "Microsoft.Storage", "Microsoft.Sql"]
-
-  delegations = [
+  # routes
+  enabled_route_table = false
+  routes = [
     {
-      name                       = "Test-1"
-      service_delegation_name    = "Microsoft.ContainerInstance/containerGroups"
-      service_delegation_actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+      name           = "rt-test"
+      address_prefix = "0.0.0.0/0"
+      next_hop_type  = "Internet"
     }
   ]
-
-  ## Network Security Group Association
-  network_security_group_id = module.security_group.security_group_id
 }
 
+
 module "security_group" {
-  source = "../../terraform-azure-security-group"
+  source = "./../_module/terraform-azure-network-security-group"
 
   ## Tags
-  name        = "security-group"
-  application = "clouddrove"
+  name        = "app"
   environment = "test"
-  label_order = ["environment", "application", "name"]
-  enabled     = true
+  label_order = ["name", "environment"]
 
   ## Security Group
   resource_group_name = module.resource_group.resource_group_name
   location            = module.resource_group.resource_group_location
 
-  ## Security Group Rule
-  protocol                     = "Tcp"
-  source_port_range            = "*"
-  destination_port_ranges      = ["22", "80"]
-  source_address_prefixes      = ["49.36.131.84/32"]
-  destination_address_prefixes = module.subnet.address_prefix
-  access                       = "Allow"
-  priority                     = 105
+  ##Security Group rule for Custom port.
+  custom_port = [{
+    name                         = "ssh"
+    protocol                     = "Tcp"
+    source_port_range            = "*"
+    destination_port_ranges      = ["22"]
+    source_address_prefixes      = ["0.0.0.0/0"]
+    destination_address_prefixes = ["0.0.0.0/0"]
+    access                       = "Allow"
+    priority                     = 1002
+    },
+    {
+      name                         = "http-https"
+      protocol                     = "Tcp"
+      source_port_range            = "*"
+      destination_port_ranges      = ["80", "443"]
+      source_address_prefixes      = ["0.0.0.0/0"]
+      destination_address_prefixes = ["0.0.0.0/0"]
+      access                       = "Allow"
+      priority                     = 1003
+    }
+  ]
 }
 
-module "virtual_machine" {
+
+module "virtual-machine" {
   source = "../"
 
   ## Tags
-  name        = "virtual-machine"
-  application = "clouddrove"
+  name        = "app"
   environment = "test"
-  label_order = ["environment", "application", "name"]
-  
-  ## Common 
+  label_order = ["environment", "name"]
+
+  ## Common
   enabled             = true
-  machine_count       = 2
+  machine_count       = 1
   resource_group_name = module.resource_group.resource_group_name
   location            = module.resource_group.resource_group_location
 
   ## Network Interface
-  subnet_id                     = module.subnet.subnet_id
+  subnet_id                     = module.virtual_network.vnet_subnets
   private_ip_address_version    = "IPv4"
   private_ip_address_allocation = "Static"
   primary                       = true
-  private_ip_addresses          = ["10.0.0.3", "10.0.1.5"]
+  private_ip_addresses          = ["10.0.1.4"]
+  #nsg
+  network_interface_sg_enabled = true
+  network_security_group_id    = module.security_group.security_group_id
 
   ## Availability Set
   availability_set_enabled     = true
@@ -117,32 +116,23 @@ module "virtual_machine" {
   sku               = "Basic"
   allocation_method = "Static"
   ip_version        = "IPv4"
-  domain_name_label = "clouddrove"
 
-  ## Storage Account
-  boot_diagnostics_enabled = true
-  account_kind             = "StorageV2"
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  network_rules_enabled    = true
-  default_action           = "Deny"
-  bypass                   = "Logging"
 
   ## Virtual Machine
-  vm_size                         = "Standard_D2s_v3"
   linux_enabled                   = true
+  vm_size                         = "Standard_B1s"
   file_path                       = "~/.ssh/id_rsa.pub"
-  username                        = "aashish"
+  username                        = "ubuntu"
   os_profile_enabled              = true
-  admin_username                  = "aashish"
+  admin_username                  = "ubuntu"
   create_option                   = "FromImage"
   caching                         = "ReadWrite"
-  disk_size_gb                    = 10
+  disk_size_gb                    = 30
   os_type                         = "Linux"
   managed_disk_type               = "Standard_LRS"
   storage_image_reference_enabled = true
   image_publisher                 = "Canonical"
-  image_offer                     = "UbuntuServer"
-  image_sku                       = "16.04-LTS"
+  image_offer                     = "0001-com-ubuntu-server-focal"
+  image_sku                       = "20_04-lts"
   image_version                   = "latest"
 }

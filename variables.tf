@@ -19,7 +19,7 @@ variable "environment" {
 }
 
 variable "tags" {
-  type        = map
+  type        = map(any)
   default     = {}
   description = "Additional tags (e.g. map(`BusinessUnit`,`XYZ`)."
 }
@@ -31,9 +31,14 @@ variable "managedby" {
 }
 
 variable "label_order" {
-  type        = list
+  type        = list(any)
   default     = []
   description = "Label order, e.g. `name`,`application`."
+}
+variable "repository" {
+  type        = string
+  default     = ""
+  description = "Terraform current module repo"
 }
 
 ## Common Variables
@@ -113,7 +118,7 @@ variable "internal_dns_name_label" {
 }
 
 variable "subnet_id" {
-  type        = list
+  type        = list(any)
   default     = []
   description = "The ID of the Subnet where this Network Interface should be located in."
 }
@@ -137,7 +142,7 @@ variable "primary" {
 }
 
 variable "private_ip_addresses" {
-  type        = list
+  type        = list(any)
   default     = []
   description = "The Static IP Address which should be used."
 }
@@ -208,7 +213,7 @@ variable "idle_timeout_in_minutes" {
 
 variable "domain_name_label" {
   type        = string
-  default     = ""
+  default     = null
   description = "Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system."
 }
 
@@ -225,8 +230,8 @@ variable "public_ip_prefix_id" {
 }
 
 variable "zones" {
-  type        = list
-  default     = []
+  type        = list(any)
+  default     = null
   description = "A collection containing the availability zone to allocate the Public IP in."
 }
 
@@ -281,25 +286,25 @@ variable "blob_properties_enabled" {
 }
 
 variable "allowed_headers" {
-  type        = list
+  type        = list(any)
   default     = []
   description = "A list of headers that are allowed to be a part of the cross-origin request."
 }
 
 variable "allowed_methods" {
-  type        = list
+  type        = list(any)
   default     = []
   description = "A list of http headers that are allowed to be executed by the origin. Valid options are DELETE, GET, HEAD, MERGE, POST, OPTIONS, PUT or PATCH."
 }
 
 variable "allowed_origins" {
-  type        = list
+  type        = list(any)
   default     = []
   description = "A list of origin domains that will be allowed by CORS."
 }
 
 variable "exposed_headers" {
-  type        = list
+  type        = list(any)
   default     = []
   description = "A list of response headers that are exposed to CORS clients."
 }
@@ -365,7 +370,7 @@ variable "log_version" {
 }
 
 variable "log_write" {
-  type        = bool 
+  type        = bool
   default     = false
   description = "Indicates whether all write requests should be logged."
 }
@@ -559,7 +564,7 @@ variable "vm_type" {
 }
 
 variable "identity_ids" {
-  type        = list
+  type        = list(any)
   default     = []
   description = "Specifies a list of user managed identity ids to be assigned to the VM."
 }
@@ -736,4 +741,15 @@ variable "network_security_group_id" {
   type        = string
   default     = ""
   description = "The ID of the Network Security Group which should be attached to the Network Interface."
+}
+variable "blob_endpoint" {
+  type        = string
+  default     = ""
+  description = "The Storage Account's Blob Endpoint which should hold the virtual machine's diagnostic files"
+}
+
+variable "ddos_protection_mode" {
+  type        = string
+  default     = "VirtualNetworkInherited"
+  description = "The DDoS protection mode of the public IP"
 }
