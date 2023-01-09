@@ -84,14 +84,14 @@ Here are some examples of how you can use this module in your inventory structur
   location                       = module.resource_group.resource_group_location
 
   ## Network Interface
-  subnet_id                      = module.virtual_network.vnet_subnets
+  subnet_id                      = module.subnet.default_subnet_id
   private_ip_address_version     = "IPv4"
   private_ip_address_allocation  = "Static"
   primary                        = true
   private_ip_addresses           = ["10.0.1.4"]
   #nsg
   network_interface_sg_enabled   = true
-  network_security_group_id      = module.security_group.security_group_id
+  network_security_group_id      = module.security_group.id
 
   ## Availability Set
   availability_set_enabled       = true
