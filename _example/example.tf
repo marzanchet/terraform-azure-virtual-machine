@@ -71,7 +71,7 @@ source  = "clouddrove/network-security-group/azure"
      priority = 101
      access = "Allow"
      protocol = "Tcp"
-     source_address_prefix = "10.10.0.0/16"
+     source_address_prefix = "0.0.0.0/0"
      source_port_range = "*"
      destination_address_prefix = "0.0.0.0/0"
      destination_port_range = "22"
@@ -120,7 +120,7 @@ module "virtual-machine" {
   ## Virtual Machine
   linux_enabled                   = true
   vm_size                         = "Standard_B1s"
-  file_path                       = "~/.ssh/id_rsa.pub"
+  public_key                      = "ssh-rsa AAAAB3NzaC1yc2EoL9X+2+4Xb dev"
   username                        = "ubuntu"
   os_profile_enabled              = true
   admin_username                  = "ubuntu"

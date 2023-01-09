@@ -753,3 +753,10 @@ variable "ddos_protection_mode" {
   default     = "VirtualNetworkInherited"
   description = "The DDoS protection mode of the public IP"
 }
+
+variable "public_key" {
+  type        = string
+  default     = ""
+  description = "Name  (e.g. `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD3F6tyPEFEzV0LX3X8BsXdMsQ`)."
+  sensitive   = true
+}
