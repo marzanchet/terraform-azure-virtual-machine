@@ -12,29 +12,37 @@ module "resource_group" {
   location    = "Canada Central"
 }
 
-#Vnet
-module "virtual_network" {
-  depends_on = [module.resource_group]
-  source     = "clouddrove/virtual-network/azure"
-  version    = "1.0.4"
+module "vnet" {
+  source  = "clouddrove/vnet/azure"
+  version = "1.0.0"
 
-  name        = "app"
-  environment = "test"
-  label_order = ["name", "environment"]
-
+  name                = "app"
+  environment         = "test"
+  label_order         = ["name", "environment"]
   resource_group_name = module.resource_group.resource_group_name
   location            = module.resource_group.resource_group_location
   address_space       = "10.0.0.0/16"
   enable_ddos_pp      = false
+}
+
+module "subnet" {
+  source  = "clouddrove/subnet/azure"
+  version = "1.0.1"
+
+  name                 = "app"
+  environment          = "test"
+  label_order          = ["name", "environment"]
+  resource_group_name  = module.resource_group.resource_group_name
+  location             = module.resource_group.resource_group_location
+  virtual_network_name = join("", module.vnet.vnet_name)
 
   #subnet
-  default_name_subnet           = true
-  subnet_names                  = ["subnet1"]
-  subnet_prefixes               = ["10.0.1.0/24"]
-  disable_bgp_route_propagation = false
+  default_name_subnet = true
+  subnet_names        = ["subnet1", "subnet2"]
+  subnet_prefixes     = ["10.0.1.0/24", "10.0.2.0/24"]
 
-  # routes
-  enabled_route_table = false
+  # route_table
+  enable_route_table = false
   routes = [
     {
       name           = "rt-test"
@@ -44,41 +52,32 @@ module "virtual_network" {
   ]
 }
 
-
 module "security_group" {
-  source = "./../_module/terraform-azure-network-security-group"
-
+source  = "clouddrove/network-security-group/azure"
+  version = "1.0.0"
   ## Tags
   name        = "app"
   environment = "test"
   label_order = ["name", "environment"]
 
   ## Security Group
-  resource_group_name = module.resource_group.resource_group_name
-  location            = module.resource_group.resource_group_location
-
+  resource_group_name      = module.resource_group.resource_group_name
+  resource_group_location  = module.resource_group.resource_group_location
+  subnet_ids               = module.subnet.default_subnet_id
   ##Security Group rule for Custom port.
-  custom_port = [{
-    name                         = "ssh"
-    protocol                     = "Tcp"
-    source_port_range            = "*"
-    destination_port_ranges      = ["22"]
-    source_address_prefixes      = ["0.0.0.0/0"]
-    destination_address_prefixes = ["0.0.0.0/0"]
-    access                       = "Allow"
-    priority                     = 1002
-    },
+  inbound_rules = [
     {
-      name                         = "http-https"
-      protocol                     = "Tcp"
-      source_port_range            = "*"
-      destination_port_ranges      = ["80", "443"]
-      source_address_prefixes      = ["0.0.0.0/0"]
-      destination_address_prefixes = ["0.0.0.0/0"]
-      access                       = "Allow"
-      priority                     = 1003
-    }
-  ]
+     name = "ssh" 
+     priority = 101
+     access = "Allow"
+     protocol = "Tcp"
+     source_address_prefix = "10.10.0.0/16"
+     source_port_range = "*"
+     destination_address_prefix = "0.0.0.0/0"
+     destination_port_range = "22"
+     description = "ssh allowed port"
+}]
+  
 }
 
 
@@ -97,14 +96,14 @@ module "virtual-machine" {
   location            = module.resource_group.resource_group_location
 
   ## Network Interface
-  subnet_id                     = module.virtual_network.vnet_subnets
+  subnet_id                     = module.subnet.default_subnet_id
   private_ip_address_version    = "IPv4"
   private_ip_address_allocation = "Static"
   primary                       = true
   private_ip_addresses          = ["10.0.1.4"]
   #nsg
   network_interface_sg_enabled = true
-  network_security_group_id    = module.security_group.security_group_id
+  network_security_group_id    = module.security_group.id
 
   ## Availability Set
   availability_set_enabled     = true

@@ -4,19 +4,13 @@ output "resource_group_name" {
 }
 
 output "virtual_network_name" {
-  value       = module.virtual_network.vnet_name
+  value       = module.vnet.vnet_name
   description = "The name of the virtual network in which the subnet is created in."
 }
 
 output "subnet_id" {
-  value       = module.virtual_network.vnet_subnets
+  value       = module.subnet.default_subnet_id
   description = "The subnet ID."
-}
-
-
-output "network_interface_id" {
-  value       = module.virtual-machine.network_interface_id
-  description = "The ID of the Network Interface."
 }
 
 output "network_interface_private_ip_addresses" {
