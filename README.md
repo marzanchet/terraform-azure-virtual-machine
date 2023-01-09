@@ -230,6 +230,7 @@ Here are some examples of how you can use this module in your inventory structur
 | proximity\_placement\_group\_id | The ID of the Proximity Placement Group to which this Virtual Machine should be assigned. | `string` | `""` | no |
 | public\_ip\_enabled | Whether public IP is enabled. | `bool` | `false` | no |
 | public\_ip\_prefix\_id | If specified then public IP address allocated will be provided from the public IP prefix resource. | `string` | `null` | no |
+| public\_key | Name  (e.g. `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD3F6tyPEFEzV0LX3X8BsXdMsQ`). | `string` | `""` | no |
 | queue\_properties\_enabled | Whether queue properties is enabled. | `bool` | `false` | no |
 | read | Used when retrieving the Resource Group. | `string` | `"5m"` | no |
 | repository | Terraform current module repo | `string` | `""` | no |
