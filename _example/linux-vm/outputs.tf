@@ -34,7 +34,7 @@ output "public_ip_address" {
 }
 
 output "virtual_machine_id" {
-  value       = module.virtual-machine.virtual_machine_id
+  value       = join("", module.virtual-machine.*.virtual_machine_id)
   description = "The ID of the Virtual Machine."
 }
 
