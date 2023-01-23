@@ -69,58 +69,129 @@ This module has a few dependencies:
 
 
 Here are some examples of how you can use this module in your inventory structure:
-### Default vnet-peering
+### Linux Virtual Machine
 ```hcl
   module "virtual-machine" {
   source                         = "clouddrove/virtual-machine/azure"
   version                        = "1.0.0"
-  name                           = "app"
-  environment                    = "test"
-  label_order                    = ["name", "environment"]
-  ## Common
-  enabled                        = true
-  machine_count                  = 1
-  resource_group_name            = module.resource_group.resource_group_name
-  location                       = module.resource_group.resource_group_location
+  name        = "app"
+environment = "test"
+label_order = ["environment", "name"]
 
-  ## Network Interface
-  subnet_id                      = module.subnet.default_subnet_id
-  private_ip_address_version     = "IPv4"
-  private_ip_address_allocation  = "Static"
-  primary                        = true
-  private_ip_addresses           = ["10.0.1.4"]
-  #nsg
-  network_interface_sg_enabled   = true
-  network_security_group_id      = module.security_group.id
+## Common
+is_vm_linux       = true
+enabled             = true
+machine_count       = 1
+resource_group_name = module.resource_group.resource_group_name
+location            = module.resource_group.resource_group_location
+disable_password_authentication = true
 
-  ## Availability Set
-  availability_set_enabled       = true
-  platform_update_domain_count   = 7
-  platform_fault_domain_count    = 3
+## Network Interface
+subnet_id                     = module.subnet.default_subnet_id
+private_ip_address_version    = "IPv4"
+private_ip_address_allocation = "Static"
+primary                       = true
+private_ip_addresses          = ["10.0.1.4"]
+#nsg
+network_interface_sg_enabled = true
+network_security_group_id    = module.security_group.id
 
-  ## Public IP
-  public_ip_enabled              = true
-  sku                            = "Basic"
-  allocation_method              = "Static"
-  ip_version                     = "IPv4"
+## Availability Set
+availability_set_enabled     = true
+platform_update_domain_count = 7
+platform_fault_domain_count  = 3
 
-  ## Virtual Machine
-  linux_enabled                  = true
-  vm_size                        = "Standard_B1s"
-  file_path                      = "~/.ssh/id_rsa.pub"
-  username                       = "ubuntu"
-  os_profile_enabled             = true
-  admin_username                 = "ubuntu"
-  create_option                  = "FromImage"
-  caching                        = "ReadWrite"
-  disk_size_gb                   = 30
-  os_type                        = "Linux"
-  managed_disk_type               = "Standard_LRS"
-  storage_image_reference_enabled = true
-  image_publisher                 = "Canonical"
-  image_offer                     = "UbuntuServer"
-  image_sku                       = "20.04-LTS"
-  image_version                   = "latest"
+## Public IP
+public_ip_enabled = true
+sku               = "Basic"
+allocation_method = "Static"
+ip_version        = "IPv4"
+
+
+## Virtual Machine
+linux_enabled                   = true
+vm_size                         = "Standard_B1s"
+public_key                      = "ssh-rsa AAAAB3NzaC1yc2EoL9X+2+4Xb dev" # Enter valid public key here
+username                        = "ubuntu"
+os_profile_enabled              = true
+admin_username                  = "ubuntu"
+# admin_password                  = "P@ssw0rd!123!" # It is compulsory when disable_password_authentication = false
+create_option                   = "FromImage"
+caching                         = "ReadWrite"
+disk_size_gb                    = 30
+os_type                         = "Linux"
+managed_disk_type               = "Standard_LRS"
+storage_image_reference_enabled = true
+image_publisher                 = "Canonical"
+image_offer                     = "0001-com-ubuntu-server-focal"
+image_sku                       = "20_04-lts"
+image_version                   = "latest"
+}
+```
+### Windows Virtual Machine
+```hcl
+  module "virtual-machine" {
+  source                         = "clouddrove/virtual-machine/azure"
+  version                        = "1.0.0"
+  name        = "app"
+environment = "test"
+label_order = ["environment", "name"]
+
+## Common
+is_vm_windows                   = true
+enabled                         = true
+machine_count                   = 1
+resource_group_name             = module.resource_group.resource_group_name
+location                        = module.resource_group.resource_group_location
+disable_password_authentication = false
+create_option                   = "FromImage"
+disk_size_gb                    = 128
+
+
+## Network Interface
+subnet_id                     = module.subnet.default_subnet_id
+private_ip_address_version    = "IPv4"
+private_ip_address_allocation = "Static"
+primary                       = true
+private_ip_addresses          = ["10.0.1.4"]
+#nsg
+network_interface_sg_enabled = true
+network_security_group_id    = module.security_group.id
+
+## Availability Set
+availability_set_enabled     = true
+platform_update_domain_count = 7
+platform_fault_domain_count  = 3
+
+## Public IP
+public_ip_enabled = true
+sku               = "Basic"
+allocation_method = "Static"
+ip_version        = "IPv4"
+
+
+os_type = "windows"
+computer_name="app-win-comp"
+
+# windows_distribution_name = "windows2019dc"
+vm_size         = "Standard_B1s"
+admin_username  = "azureadmin"
+admin_password  = "Password@123"
+image_publisher = "MicrosoftWindowsServer"
+image_offer     = "WindowsServer"
+image_sku       = "2019-Datacenter"
+image_version   = "latest"
+
+
+enable_boot_diagnostics = false #Default is false 
+
+data_disks = [
+  {
+    name                 = "disk1"
+    disk_size_gb         = 128
+    storage_account_type = "StandardSSD_LRS"
+  }
+]
 }
 ```
 
@@ -137,6 +208,8 @@ Here are some examples of how you can use this module in your inventory structur
 | account\_kind | Defines the Kind of account. Valid options are BlobStorage, BlockBlobStorage, FileStorage, Storage and StorageV2. | `string` | `"StorageV2"` | no |
 | account\_replication\_type | Defines the type of replication to use for this storage account. Valid options are LRS, GRS, RAGRS, ZRS, GZRS and RAGZRS. | `string` | `""` | no |
 | account\_tier | Defines the Tier to use for this storage account. Valid options are Standard and Premium. | `string` | `""` | no |
+| additional\_unattend\_content | The XML formatted content that is added to the unattend.xml file for the specified path and component. | `any` | `null` | no |
+| additional\_unattend\_content\_setting | The name of the setting to which the content applies. Possible values are `AutoLogon` and `FirstLogonCommands` | `any` | `null` | no |
 | addtional\_capabilities\_enabled | Whether additional capabilities block is enabled. | `bool` | `false` | no |
 | admin\_password | The password associated with the local administrator account. | `string` | `""` | no |
 | admin\_username | Specifies the name of the local administrator account. | `string` | `""` | no |
@@ -154,25 +227,30 @@ Here are some examples of how you can use this module in your inventory structur
 | certificate\_store | Specifies the certificate store on the Virtual Machine where the certificate should be added to, such as My. | `string` | `""` | no |
 | certificate\_url | The ID of the Key Vault Secret which contains the encrypted Certificate which should be installed on the Virtual Machine. This certificate must also be specified in the vault\_certificates block within the os\_profile\_secrets block. | `string` | `""` | no |
 | component | Specifies the name of the component to configure with the added content. The only allowable value is Microsoft-Windows-Shell-Setup. | `string` | `"Microsoft-Windows-Shell-Setup"` | no |
+| computer\_name | Name of the Windows Computer Name. | `string` | `""` | no |
 | content | Specifies the base-64 encoded XML formatted content that is added to the unattend.xml file for the specified path and component. | `string` | `""` | no |
 | create | Used when creating the Resource Group. | `string` | `"60m"` | no |
 | create\_option | Specifies how the OS Disk should be created. Possible values are Attach (managed disks only) and FromImage. | `string` | `""` | no |
 | custom\_domain\_enabled | Whether custom domain is enabled. | `bool` | `false` | no |
 | custom\_image\_id | Specifies the ID of the Custom Image which the Virtual Machine should be created from. | `string` | `""` | no |
+| data\_disks | Managed Data Disks for azure viratual machine | <pre>list(object({<br>    name                 = string<br>    storage_account_type = string<br>    disk_size_gb         = number<br>  }))</pre> | `[]` | no |
 | days | Specifies the number of days that the blob should be retained, between 1 and 365 days. Defaults to 7. | `number` | `7` | no |
 | ddos\_protection\_mode | The DDoS protection mode of the public IP | `string` | `"VirtualNetworkInherited"` | no |
 | default\_action | Specifies the default action of allow or deny when no other rules match. Valid options are Deny or Allow. | `string` | `""` | no |
 | delete | Used when deleting the Resource Group. | `string` | `"60m"` | no |
 | delete\_data\_disks\_on\_termination | Should the Data Disks (either the Managed Disks / VHD Blobs) be deleted when the Virtual Machine is destroyed? Defaults to false. | `bool` | `true` | no |
 | delete\_os\_disk\_on\_termination | Should the OS Disk (either the Managed Disk / VHD Blob) be deleted when the Virtual Machine is destroyed? Defaults to false. | `bool` | `true` | no |
-| disable\_password\_authentication | Specifies whether password authentication should be disabled. | `bool` | `true` | no |
+| disable\_password\_authentication | Specifies whether password authentication should be disabled. | `bool` | `false` | no |
+| disk\_encryption\_set\_id | The ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. The Disk Encryption Set must have the `Reader` Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault | `any` | `null` | no |
 | disk\_size\_gb | Specifies the size of the OS Disk in gigabytes. | `number` | `8` | no |
 | dns\_servers | List of IP addresses of DNS servers. | `list(string)` | `[]` | no |
 | domain\_name\_label | Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system. | `string` | `null` | no |
 | enable\_accelerated\_networking | Should Accelerated Networking be enabled? Defaults to false. | `bool` | `false` | no |
 | enable\_automatic\_upgrades | Are automatic updates enabled on this Virtual Machine? Defaults to false. | `bool` | `false` | no |
+| enable\_boot\_diagnostics | Should the boot diagnostics enabled? | `bool` | `false` | no |
 | enable\_https\_traffic\_only | Boolean flag which forces HTTPS if enabled. Defaults to true. | `bool` | `true` | no |
 | enable\_ip\_forwarding | Should IP Forwarding be enabled? Defaults to false. | `bool` | `false` | no |
+| enable\_os\_disk\_write\_accelerator | Should Write Accelerator be Enabled for this OS Disk? This requires that the `storage_account_type` is set to `Premium_LRS` and that `caching` is set to `None`. | `bool` | `false` | no |
 | enabled | Flag to control the module creation. | `bool` | `false` | no |
 | environment | Environment (e.g. `prod`, `dev`, `staging`). | `string` | `""` | no |
 | error\_404\_document | The absolute path to a custom webpage that should be used when a request is made which does not correspond to an existing file. | `string` | `""` | no |
@@ -192,6 +270,8 @@ Here are some examples of how you can use this module in your inventory structur
 | internal\_dns\_name\_label | The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network. | `string` | `null` | no |
 | ip\_version | The IP Version to use, IPv6 or IPv4. | `string` | `""` | no |
 | is\_hns\_enabled | Is Hierarchical Namespace enabled?. | `bool` | `false` | no |
+| is\_vm\_linux | Create Linux Virtual Machine. | `bool` | `false` | no |
+| is\_vm\_windows | Create Windows Virtual Machine. | `bool` | `false` | no |
 | label\_order | Label order, e.g. `name`,`application`. | `list(any)` | `[]` | no |
 | license\_type | Specifies the BYOL Type for this Virtual Machine. This is only applicable to Windows Virtual Machines. Possible values are Windows\_Client and Windows\_Server. | `string` | `"Windows_Client"` | no |
 | linux\_enabled | Whether linux block is enabled. | `bool` | `false` | no |
@@ -212,6 +292,7 @@ Here are some examples of how you can use this module in your inventory structur
 | network\_interface\_sg\_enabled | Whether network interface security group is enabled. | `bool` | `false` | no |
 | network\_rules\_enabled | Whether network rules block is enabled. | `bool` | `false` | no |
 | network\_security\_group\_id | The ID of the Network Security Group which should be attached to the Network Interface. | `string` | `""` | no |
+| os\_disk\_storage\_account\_type | The Type of Storage Account which should back this the Internal OS Disk. Possible values include Standard\_LRS, StandardSSD\_LRS and Premium\_LRS. | `string` | `"StandardSSD_LRS"` | no |
 | os\_profile\_enabled | Whether os profile block is enabled. | `bool` | `false` | no |
 | os\_type | Specifies the Operating System on the OS Disk. Possible values are Linux and Windows. | `string` | `""` | no |
 | pass | Specifies the name of the pass that the content applies to. The only allowable value is oobeSystem. | `string` | `"oobeSystem"` | no |
@@ -230,6 +311,7 @@ Here are some examples of how you can use this module in your inventory structur
 | proximity\_placement\_group\_id | The ID of the Proximity Placement Group to which this Virtual Machine should be assigned. | `string` | `""` | no |
 | public\_ip\_enabled | Whether public IP is enabled. | `bool` | `false` | no |
 | public\_ip\_prefix\_id | If specified then public IP address allocated will be provided from the public IP prefix resource. | `string` | `null` | no |
+| public\_key | Name  (e.g. `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD3F6tyPEFEzV0LX3X8BsXdMsQ`). | `string` | `""` | no |
 | queue\_properties\_enabled | Whether queue properties is enabled. | `bool` | `false` | no |
 | read | Used when retrieving the Resource Group. | `string` | `"5m"` | no |
 | repository | Terraform current module repo | `string` | `""` | no |
@@ -239,6 +321,7 @@ Here are some examples of how you can use this module in your inventory structur
 | sa\_type | Specifies the identity type of the Storage Account. At this time the only allowed value is SystemAssigned. | `string` | `"SystemAssigned"` | no |
 | setting\_name | Specifies the name of the setting to which the content applies. Possible values are: FirstLogonCommands and AutoLogon. | `string` | `""` | no |
 | sku | The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Basic. | `string` | `"Basic"` | no |
+| source\_image\_id | The ID of an Image which each Virtual Machine should be based on | `any` | `null` | no |
 | source\_vault\_id | Specifies the ID of the Key Vault to use. | `string` | `""` | no |
 | static\_website\_enabled | Whether static website block is enabled. | `bool` | `false` | no |
 | storage\_data\_disk\_enabled | Whether storage data disk is enabled. | `bool` | `false` | no |
@@ -254,7 +337,9 @@ Here are some examples of how you can use this module in your inventory structur
 | vhd\_uri | Specifies the URI of the VHD file backing this Unmanaged OS Disk. Changing this forces a new resource to be created. | `string` | `null` | no |
 | vm\_size | Specifies the size of the Virtual Machine. | `string` | `""` | no |
 | vm\_type | The Managed Service Identity Type of this Virtual Machine. Possible values are SystemAssigned and UserAssigned. | `string` | `""` | no |
+| windows\_distribution\_name | Variable to pick an OS flavour for Windows based VM. Possible values include: winserver, wincore, winsql | `string` | `"windows2019dc"` | no |
 | windows\_enabled | Whether windows block is enabled. | `bool` | `false` | no |
+| windows\_protocol | Specifies the protocol of winrm listener. Possible values are `Http` or `Https` | `any` | `null` | no |
 | write\_accelerator\_enabled | Specifies if Write Accelerator is enabled on the disk. This can only be enabled on Premium\_LRS managed disks with no caching and M-Series VMs. Defaults to false. | `bool` | `false` | no |
 | zones | A collection containing the availability zone to allocate the Public IP in. | `list(any)` | `null` | no |
 
