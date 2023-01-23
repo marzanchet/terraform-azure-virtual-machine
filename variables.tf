@@ -449,11 +449,6 @@ variable "delete_os_disk_on_termination" {
   description = "Should the OS Disk (either the Managed Disk / VHD Blob) be deleted when the Virtual Machine is destroyed? Defaults to false."
 }
 
-variable "enable_os_disk_write_accelerator" {
-  description = "Should Write Accelerator be Enabled for this OS Disk? This requires that the `storage_account_type` is set to `Premium_LRS` and that `caching` is set to `None`."
-  default     = false
-}
-
 variable "delete_data_disks_on_termination" {
   type        = bool
   default     = true
@@ -474,7 +469,7 @@ variable "linux_enabled" {
 
 variable "disable_password_authentication" {
   type        = bool
-  default     = false
+  default     = true
   description = "Specifies whether password authentication should be disabled."
 }
 
@@ -500,26 +495,6 @@ variable "provision_vm_agent" {
   type        = bool
   default     = false
   description = "Should the Azure Virtual Machine Guest Agent be installed on this Virtual Machine? Defaults to false."
-}
-
-variable "os_disk_storage_account_type" {
-  description = "The Type of Storage Account which should back this the Internal OS Disk. Possible values include Standard_LRS, StandardSSD_LRS and Premium_LRS."
-  default     = "StandardSSD_LRS"
-}
-
-variable "disk_encryption_set_id" {
-  description = "The ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. The Disk Encryption Set must have the `Reader` Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault"
-  default     = null
-}
-
-variable "additional_unattend_content" {
-  description = "The XML formatted content that is added to the unattend.xml file for the specified path and component."
-  default     = null
-}
-
-variable "additional_unattend_content_setting" {
-  description = "The name of the setting to which the content applies. Possible values are `AutoLogon` and `FirstLogonCommands`"
-  default     = null
 }
 
 variable "enable_automatic_upgrades" {
@@ -606,48 +581,16 @@ variable "admin_username" {
   description = "Specifies the name of the local administrator account."
 }
 
-variable "source_image_id" {
-  description = "The ID of an Image which each Virtual Machine should be based on"
-  default     = null
-}
-
 variable "admin_password" {
   type        = string
   default     = ""
   description = "The password associated with the local administrator account."
 }
 
-variable "windows_distribution_name" {
-  default     = "windows2019dc"
-  description = "Variable to pick an OS flavour for Windows based VM. Possible values include: winserver, wincore, winsql"
-}
-
 variable "vault_enabled" {
   type        = bool
   default     = false
   description = "Whether key vault is enabled."
-}
-
-variable "is_vm_windows" {
-  type        = bool
-  default     = false
-  description = "Create Windows Virtual Machine."
-}
-
-variable "is_vm_linux" {
-  type        = bool
-  default     = false
-  description = "Create Linux Virtual Machine."
-}
-
-variable "enable_boot_diagnostics" {
-  description = "Should the boot diagnostics enabled?"
-  default     = false
-}
-
-variable "windows_protocol" {
-  description = "Specifies the protocol of winrm listener. Possible values are `Http` or `Https`"
-  default     = null
 }
 
 variable "source_vault_id" {
@@ -698,12 +641,6 @@ variable "caching" {
   description = "Specifies the caching requirements for the OS Disk. Possible values include None, ReadOnly and ReadWrite."
 }
 
-variable "computer_name" {
-  type        = string
-  default     = ""
-  description = "Name of the Windows Computer Name."
-}
-
 variable "disk_size_gb" {
   type        = number
   default     = 8
@@ -732,16 +669,6 @@ variable "managed_disk_id" {
   type        = string
   default     = ""
   description = "Specifies the ID of an existing Managed Disk which should be attached as the OS Disk of this Virtual Machine. If this is set then the create_option must be set to Attach."
-}
-
-variable "data_disks" {
-  description = "Managed Data Disks for azure viratual machine"
-  type = list(object({
-    name                 = string
-    storage_account_type = string
-    disk_size_gb         = number
-  }))
-  default = []
 }
 
 variable "managed_disk_type" {
