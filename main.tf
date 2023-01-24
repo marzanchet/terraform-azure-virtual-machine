@@ -95,7 +95,7 @@ resource "azurerm_public_ip" "default" {
 #Module      : LINUX VIRTUAL MACHINE
 #Description : Terraform resource to create a linux virtual machine.
 resource "azurerm_virtual_machine" "default" {
-  count                            = var.enabled ? var.machine_count : 0
+  count                            = var.is_vm_linux ? var.machine_count : 0
   name                             = format("%s-virtual-machine-%s", module.labels.id, count.index + 1)
   resource_group_name              = var.resource_group_name
   location                         = var.location
@@ -109,17 +109,17 @@ resource "azurerm_virtual_machine" "default" {
   zones                            = var.zones
   tags                             = module.labels.tags
 
-  dynamic "os_profile_linux_config" {
-    for_each = var.linux_enabled && var.disable_password_authentication ? [1] : []
+  os_profile_linux_config {
+    # for_each = var.is_vm_linux && var.disable_password_authentication ? [1] : []
 
-    content {
-      disable_password_authentication = var.disable_password_authentication
+    # content {
+    disable_password_authentication = var.disable_password_authentication
 
-      ssh_keys {
-        key_data = var.public_key
-        path     = "/home/${var.username}/.ssh/authorized_keys"
-      }
+    ssh_keys {
+      key_data = var.public_key
+      path     = "/home/${var.username}/.ssh/authorized_keys"
     }
+    # }
   }
 
   dynamic "boot_diagnostics" {
@@ -220,6 +220,91 @@ resource "azurerm_virtual_machine" "default" {
       sku       = var.custom_image_id == "" ? var.image_sku : ""
       version   = var.custom_image_id == "" ? var.image_version : ""
       id        = var.custom_image_id
+    }
+  }
+
+  timeouts {
+    create = var.create
+    update = var.update
+    read   = var.read
+    delete = var.delete
+  }
+}
+
+
+
+
+#Module      : Windows VIRTUAL MACHINE
+#Description : Terraform resource to create a windows virtual machine.
+resource "azurerm_virtual_machine" "win_vm" {
+  count                 = var.is_vm_windows ? var.machine_count : 0
+  name                  = format("%s-win-virtual-machine-%s", module.labels.id, count.index + 1)
+  resource_group_name   = var.resource_group_name
+  location              = var.location
+  network_interface_ids = [element(azurerm_network_interface.default.*.id, count.index)]
+  vm_size               = var.vm_size
+
+  availability_set_id              = join("", azurerm_availability_set.default.*.id)
+  delete_os_disk_on_termination    = var.delete_os_disk_on_termination
+  delete_data_disks_on_termination = var.delete_data_disks_on_termination
+  primary_network_interface_id     = element(azurerm_network_interface.default.*.id, count.index)
+  proximity_placement_group_id     = var.proximity_placement_group_id
+  zones                            = var.zones
+  tags                             = module.labels.tags
+
+  os_profile_windows_config {
+    provision_vm_agent = true
+  }
+
+  os_profile {
+    computer_name  = var.computer_name
+    admin_username = var.admin_username
+    admin_password = var.admin_password
+  }
+
+  dynamic "boot_diagnostics" {
+    for_each = var.boot_diagnostics_enabled ? [1] : []
+
+    content {
+      enabled     = var.boot_diagnostics_enabled
+      storage_uri = var.blob_endpoint
+    }
+  }
+
+  dynamic "additional_capabilities" {
+    for_each = var.addtional_capabilities_enabled ? [1] : []
+
+    content {
+      ultra_ssd_enabled = var.ultra_ssd_enabled
+    }
+  }
+
+  dynamic "identity" {
+    for_each = var.identity_enabled ? [1] : []
+
+    content {
+      type         = var.vm_type
+      identity_ids = var.identity_ids
+    }
+  }
+
+  storage_os_disk {
+    create_option = var.create_option
+    # storage_account_type      = var.os_disk_storage_account_type
+    caching = var.caching
+    # disk_encryption_set_id    = var.disk_encryption_set_id
+    disk_size_gb              = var.disk_size_gb
+    write_accelerator_enabled = var.enable_os_disk_write_accelerator
+    name                      = format("%s-wis-storage-data-disk", module.labels.id)
+  }
+
+  dynamic "storage_image_reference" {
+    for_each = var.source_image_id != null ? [] : [1]
+    content {
+      publisher = var.custom_image_id != null ? var.image_publisher : ""
+      offer     = var.custom_image_id != null ? var.image_offer : ""
+      sku       = var.custom_image_id != null ? var.image_sku : ""
+      version   = var.custom_image_id != null ? var.image_version : ""
     }
   }
 

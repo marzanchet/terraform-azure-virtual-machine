@@ -53,7 +53,7 @@ module "subnet" {
 }
 
 module "security_group" {
-source  = "clouddrove/network-security-group/azure"
+  source  = "clouddrove/network-security-group/azure"
   version = "1.0.0"
   ## Tags
   name        = "app"
@@ -61,28 +61,28 @@ source  = "clouddrove/network-security-group/azure"
   label_order = ["name", "environment"]
 
   ## Security Group
-  resource_group_name      = module.resource_group.resource_group_name
-  resource_group_location  = module.resource_group.resource_group_location
-  subnet_ids               = module.subnet.default_subnet_id
+  resource_group_name     = module.resource_group.resource_group_name
+  resource_group_location = module.resource_group.resource_group_location
+  subnet_ids              = module.subnet.default_subnet_id
   ##Security Group rule for Custom port.
   inbound_rules = [
     {
-     name = "ssh" 
-     priority = 101
-     access = "Allow"
-     protocol = "Tcp"
-     source_address_prefix = "0.0.0.0/0"
-     source_port_range = "*"
-     destination_address_prefix = "0.0.0.0/0"
-     destination_port_range = "22"
-     description = "ssh allowed port"
-}]
-  
+      name                       = "ssh"
+      priority                   = 101
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_address_prefix      = "0.0.0.0/0"
+      source_port_range          = "*"
+      destination_address_prefix = "0.0.0.0/0"
+      destination_port_range     = "22"
+      description                = "ssh allowed port"
+  }]
+
 }
 
 
 module "virtual-machine" {
-  source = "../"
+  source = "../../"
 
   ## Tags
   name        = "app"
@@ -90,10 +90,12 @@ module "virtual-machine" {
   label_order = ["environment", "name"]
 
   ## Common
-  enabled             = true
-  machine_count       = 1
-  resource_group_name = module.resource_group.resource_group_name
-  location            = module.resource_group.resource_group_location
+  is_vm_linux                     = true
+  enabled                         = true
+  machine_count                   = 1
+  resource_group_name             = module.resource_group.resource_group_name
+  location                        = module.resource_group.resource_group_location
+  disable_password_authentication = true
 
   ## Network Interface
   subnet_id                     = module.subnet.default_subnet_id
@@ -118,12 +120,13 @@ module "virtual-machine" {
 
 
   ## Virtual Machine
-  linux_enabled                   = true
-  vm_size                         = "Standard_B1s"
-  public_key                      = "ssh-rsa AAAAB3NzaC1yc2EoL9X+2+4Xb dev"
-  username                        = "ubuntu"
-  os_profile_enabled              = true
-  admin_username                  = "ubuntu"
+  linux_enabled      = true
+  vm_size            = "Standard_B1s"
+  public_key         = "ssh-rsa AAAAB3NzaC1yc2EoL9X+2+4Xb dev" # Enter valid public key here
+  username           = "ubuntu"
+  os_profile_enabled = true
+  admin_username     = "ubuntu"
+  # admin_password                  = "P@ssw0rd!123!" # It is compulsory when disable_password_authentication = false
   create_option                   = "FromImage"
   caching                         = "ReadWrite"
   disk_size_gb                    = 30
